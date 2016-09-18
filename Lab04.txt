@@ -1,0 +1,153 @@
+; if seeking to assemble replace .txt with .asm
+
+%include "asm_io.inc"
+segment .data 
+
+a dd 0
+b dd 0
+c dd 0
+max dd 0
+min dd 0
+product dd 1        ; hopefully no overflows
+gcd dd 0
+
+output1 db "The maximum is: ", 0
+output2 db "The minimum is: ", 0
+output3 db "The product is: ", 0
+output4 db "The GCD is: ", 0
+
+segment .bss 
+
+segment .text
+        global  asm_main
+asm_main:
+        enter   0,0               ; setup routine
+        pusha
+	;***************CODE STARTS HERE***************************
+        ; read three integers into a,b and c
+        mov eax, 0                      ; clear eax
+        call read_int
+        mov dword [a], eax
+        call read_int
+        mov dword [b], eax
+        call read_int
+        mov dword [c], eax
+        
+        ; determine max
+if_A_greaterThan_B:
+        mov eax, [a]
+        cmp eax, [b]
+        jl if_B_greaterThan_C
+        
+        cmp eax, [c]
+        jl else1
+
+        mov dword [max], eax
+        jmp max_finish
+
+if_B_greaterThan_C:
+        mov eax, [b]
+        cmp eax, [c]
+        jl else1
+
+        mov dword [max], eax
+        jmp max_finish
+
+else1:
+        mov eax, [c]
+        mov dword [max], eax
+
+max_finish:
+        ; max finding function complete
+
+        ; determine min
+if_A_lessThan_B:
+        mov eax, [a]
+        cmp eax, [b]
+        jg if_B_lessThan_C
+
+        cmp eax, [c]
+        jg else2
+
+        mov dword [min], eax
+        jmp min_finish
+
+if_B_lessThan_C:
+        mov eax, [b]
+        cmp eax, [c]
+        jg else2
+
+        mov dword [min], eax
+        jmp min_finish
+
+else2:
+        mov eax, [c]
+        mov dword [min], eax
+
+min_finish:
+    ; min finding function complete
+
+
+        ; compute product of a,b,c
+        mov eax, [product]
+        imul eax, [a]
+        imul eax, [b]
+        imul eax, [c]
+        mov dword [product], eax
+
+        ; compute GCD of a,b,c
+begin:
+        mov eax, [a]
+        cmp eax, [b]
+        je done
+
+        cmp eax, [b]
+        jl else3
+
+        sub eax, [b]
+        mov dword [a], eax
+        jmp begin
+
+else3:
+        mov eax, [b]
+        sub eax, [a]
+        mov dword [b], eax
+        jmp begin
+
+done:
+        mov eax, [a]
+        mov [gcd], eax
+
+;************** PRINT OUT RESULTS ***************        
+        ; print out max
+        mov eax, output1
+        call print_string
+        mov eax, [max]
+        call print_int
+        call print_nl
+
+        ; print out min
+        mov eax, output2
+        call print_string
+        mov eax, [min]
+        call print_int
+        call print_nl
+
+        ; print out product
+        mov eax, output3
+        call print_string
+        mov eax, [product]
+        call print_int
+        call print_nl
+
+        ; print out GCD
+        mov eax, output4
+        call print_string
+        mov eax, [gcd]
+        call print_int
+        call print_nl
+	;***************CODE ENDS HERE*****************************
+        popa
+        mov     eax, 0            ; return back to C
+        leave                     
+        ret
